@@ -3,11 +3,11 @@ import os
 
 import aws_cdk as cdk
 
-from hello_project.hello_project_stack import HelloProjectStack
-
+#from hello_project.hello_project_stack import HelloProjectStack
+from ec2.ec2 import EC2InstanceStack
 
 app = cdk.App()
-HelloProjectStack(app, "HelloProjectStack",
+EC2InstanceStack(app, "EC2InstanceStack",
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.
