@@ -5,9 +5,10 @@ import aws_cdk as cdk
 
 #from hello_project.hello_project_stack import HelloProjectStack
 from ec2.ec2 import EC2InstanceStack
+from rds.aurora import Aurora
 
 app = cdk.App()
-EC2InstanceStack(app, "EC2InstanceStack",
+ec2_stack = EC2InstanceStack(app, "EC2InstanceStack",
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.
@@ -24,5 +25,12 @@ EC2InstanceStack(app, "EC2InstanceStack",
 
     # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
     )
+
+
+Aurora(app, "Aurora", description="Aurora Cluster",
+  vpc_id    = ec2_stack.vpc.vpc_id,
+  subnet_ids= ec2_stack.vpc.public_subnets,
+  db_name="sampledb"
+)
 
 app.synth()

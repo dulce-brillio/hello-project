@@ -19,7 +19,7 @@ class EC2InstanceStack(Stack):
         super().__init__(scope, id, **kwargs)
 
         # VPC
-        vpc = ec2.Vpc(self, "VPC",
+        self.vpc = ec2.Vpc(self, "VPC",
             nat_gateways=0,
             subnet_configuration=[ec2.SubnetConfiguration(name="public",subnet_type=ec2.SubnetType.PUBLIC)]
             )
@@ -41,7 +41,7 @@ class EC2InstanceStack(Stack):
         instance = ec2.Instance(self, "Instance",
             instance_type=ec2.InstanceType("t3.nano"),
             machine_image=amzn_linux,
-            vpc = vpc,
+            vpc = self.vpc,
             role = role
             )
 
