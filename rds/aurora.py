@@ -1,6 +1,7 @@
 
 from aws_cdk import (
   aws_iam as iam,
+  aws_lambda as _lambda,
   aws_rds as rds,
   aws_sqs as sqs,
   aws_sns as sns,
@@ -381,4 +382,12 @@ class Aurora(Stack):
     CfnOutput(self, "OutputEngineFullVersion", export_name=aurora_cluster.stack.stack_name+":EngineFullVersion", value=aurora_cluster.engine.engine_version.full_version) # iclusterengine
     CfnOutput(self, "OutputEngineMajorVersion", export_name=aurora_cluster.stack.stack_name+":EngineMajorVersion", value=aurora_cluster.engine.engine_version.major_version) # iclusterengine
     CfnOutput(self, "OutputParameterGroupFamily", export_name=aurora_cluster.stack.stack_name+":ParameterGroupFamily", value=aurora_cluster.engine.parameter_group_family)
+
+    # Defines an AWS Lambda resource
+    my_lambda = _lambda.Function(
+        self, 'HelloHandler',
+        runtime=_lambda.Runtime.PYTHON_3_11,
+        code=_lambda.Code.from_asset('lambda'),
+        handler='hello.handler',
+    )
 
