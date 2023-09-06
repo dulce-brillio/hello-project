@@ -1,11 +1,26 @@
 import json
 import boto3
 import psycopg2
-#def getCredentials():
-# see above
+import os
+
+def create_table():
+    create_table = """CREATE TABLE queries(
+            id SERIAL PRIMARY KEY,
+            query_date DATE
+            )
+            """
+    try:
+        cursor.execute(create_table)
+        cursor.close()
+        connection.commit()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if connection is not None:
+            connection.close()
+
 def handler(event, context):
-  credential = getCredentials()
-  connection = psycopg2.connect(user=credential['username'], password=credential['password'], host=credential['host'], database=credential['db'])
+  connection = psycopg2.connect(user=os.environ['username'], password=os.environ['password'], host=credential['host'], database=credential['db'])
   cursor = connection.cursor()
   query = '''--initial database
     CREATE DATABASE postgrelearning;
