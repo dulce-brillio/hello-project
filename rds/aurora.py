@@ -389,5 +389,9 @@ class Aurora(Stack):
         runtime=_lambda.Runtime.PYTHON_3_11,
         code=_lambda.Code.from_asset('lambda'),
         handler='hello.handler',
+        environment= {
+          'username': aurora_cluster_credentials.username_as_string,
+          'password': aurora_cluster_credentials.password
+        }
     )
 
