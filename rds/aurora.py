@@ -20,7 +20,7 @@ class AuroraStack(Stack):
         rds_secret = secretsmanager.Secret(
             self, "RDSSecret",
             generate_secret_string=secretsmanager.SecretStringGenerator(
-                secret_string_template='{"username": "mydbuser"',
+                secret_string_template='{"username": "mydbuser"}',
                 generate_string_key="password",
                 exclude_characters=';=+[]{}"',
             )
@@ -83,7 +83,7 @@ class AuroraStack(Stack):
             handler="lambda.handler",
             code=_lambda.Code.from_asset("lambda"),
             vpc=rds_vpc,
-            security_groups=database._security_groups,
+            security_groups=[ec2.SecurityGroup.from_security_group_id(self,"SG",dbsg.security_group_id)],
             vpc_subnets= rds_vpc_subnets,
             environment={
                 "DB_ENDPOINT": database.cluster_endpoint.hostname,
@@ -92,7 +92,3 @@ class AuroraStack(Stack):
                 "DB_PASSWORD_SECRET": rds_secret.secret_name,  
             }
         )
-
-        #grant lambda permissions to access database
-        database.grant_connect(rds_lambda)
-        database.grant_create_database(rds_lambda)
