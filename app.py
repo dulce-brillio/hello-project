@@ -5,7 +5,7 @@ import aws_cdk as cdk
 
 #from hello_project.hello_project_stack import HelloProjectStack
 from ec2.ec2 import EC2InstanceStack
-from rds.aurora import Aurora
+from rds.aurora import AuroraStack
 
 app = cdk.App()
 ec2_stack = EC2InstanceStack(app, "EC2InstanceStack",
@@ -27,10 +27,9 @@ ec2_stack = EC2InstanceStack(app, "EC2InstanceStack",
     )
 
 
-Aurora(app, "Aurora", description="Aurora Cluster",
+AuroraStack(app, "AuroraStack", description="Aurora Postgresql Cluster",
   vpc_id    = ec2_stack.vpc.vpc_id,
   subnet_ids= ec2_stack.vpc.public_subnets,
-  db_name="sampledb"
 )
 
 app.synth()
