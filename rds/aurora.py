@@ -4,7 +4,10 @@ import aws_cdk.aws_lambda as _lambda
 import aws_cdk.aws_secretsmanager as secretsmanager
 
 class AuroraStack(core.Stack):
-    def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
+    def __init__(self, scope: core.Construct, id: str,
+                  vpc_id:str,                 ## vpc id
+                  subnet_ids:list[str],       ## list of subnet ids
+                  **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
         # Create a secret to store rds credentials
@@ -26,7 +29,7 @@ class AuroraStack(core.Stack):
                 "instance_type": core.InstanceType.of(
                     core.InstanceClass.BURSTABLE2, core.InstanceSize.MICRO
                 ),
-                "vpc": <VPC_ID>,
+                "vpc": vpc_id
             }
         )
 
@@ -36,9 +39,9 @@ class AuroraStack(core.Stack):
             runtime=_lambda.Runtime.PYTHON_3_11,
             handler="lambda.handler",
             code=_lambda.Code.from_asset("lambda"),
-            vpc=<VPC_ID>,
-            security_group=<SG_ID>,
-            vpc_subnets=[],
+            vpc=vpc_id,
+            security_groups=database._security_groups,
+            vpc_subnets= subnet_ids,
             environment={
                 "DB_ENDPOINT": database.cluster_endpoint.hostname,
                 "DB_PORT": database.cluster_endpoint.port,
