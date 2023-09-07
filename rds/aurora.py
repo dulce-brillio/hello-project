@@ -1,19 +1,27 @@
 from aws_cdk import core
 import aws_cdk.aws_rds as rds
 import aws_cdk.aws_lambda as _lambda
+import aws_cdk.aws_secretsmanager as secretsmanager
 
 class AuroraStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
+        # Create a secret to store rds credentials
+        rds_secret = secretsmanager.Secret(
+            self, "RDSSecret",
+            generate_secret_string=secretsmanager.SecretStringGenerator(
+                secret_string_template='{"username": "mydbuser"',
+                generate_string_key="password",
+                exclude_characters=';=+[]{}"',
+            )
+        )
+
         # Create an Aurora Postgresql database
         database = rds.DatabaseCluster(
             self, "AuroraDatabase",
             engine=rds.DatabaseClusterEngine.AURORA_POSTGRESQL,
-            master_user=rds.Login(
-                username="admin"
-                password=core.SecretValue.plain_text("password")
-            ),
+            credentials=rds.Credentials.from_secret(rds_secret),
             instance_props={
                 "instance_type": core.InstanceType.of(
                     core.InstanceClass.BURSTABLE2, core.InstanceSize.MICRO
@@ -34,8 +42,8 @@ class AuroraStack(core.Stack):
             environment={
                 "DB_ENDPOINT": database.cluster_endpoint.hostname,
                 "DB_PORT": database.cluster_endpoint.port,
-                "DB_USER": username,
-                "DB_PASSWORD":  password
+                "DB_USER": "mydbuser",
+                "DB_PASSWORD_SECRET": rds_secret.secret_name,  
             }
         )
 

@@ -1,11 +1,17 @@
 import os
 import psycopg2 as psy
+import boto3
 
 def handler(event, context):
     db_endpoint = os.environ["DB_ENDPOINT"]
     db_port = os.environ["DB_PORT"]
     db_user = os.environ["DB_USER"]
-    db_password = os.environ["DB_PASSWORD"]
+    db_password_secret = os.environ["DB_PASSWORD_SECRET"]
+
+    # Retrive secret
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId=db_password_secret)
+    db_password = response["SecretString"]
 
     connection = psy.connect(
         host=db_endpoint,
