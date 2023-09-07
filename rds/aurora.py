@@ -41,6 +41,7 @@ class AuroraStack(core.Stack):
 
         #grant lambda permissions to access database
         database.grant_connect(rds_lambda)
+        database.grant_create_database(rds_lambda)
 
 app = core.App()
 AuroraStack(app, "AuroraStack")
