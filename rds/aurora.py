@@ -82,14 +82,8 @@ class AuroraStack(Stack):
             self, "RDSLambda",
             runtime=_lambda.Runtime.PYTHON_3_11,
             handler="handler.handler",
-            code=_lambda.Code.from_asset("lambda", bundling={
-                "image": _lambda.Runtime.PYTHON_3_11.bundling_image,
-                "command": [
-                    "bash", "-c",
-                    "pip install boto3 -y\nsudo yum update\nsudo amazon-linux-extras install postgresql10"
-                    ],
-                }
-            ),
+            code=_lambda.Code.from_asset("lambda"),
+            layers=[lambdaLayer],
             vpc=rds_vpc,
             security_groups=[ec2.SecurityGroup.from_security_group_id(self,"SG",dbsg.security_group_id)],
             vpc_subnets= ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
