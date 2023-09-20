@@ -82,7 +82,7 @@ class AuroraStack(Stack):
             self, "RDSLambda",
             runtime=_lambda.Runtime.PYTHON_3_11,
             handler="handler.handler",
-            code=_lambda.Code.from_asset("lambda"),
+            code=_lambda.Code.from_asset("lambda/code"),
             layers=[lambdaLayer],
             vpc=rds_vpc,
             security_groups=[ec2.SecurityGroup.from_security_group_id(self,"SG",dbsg.security_group_id)],
