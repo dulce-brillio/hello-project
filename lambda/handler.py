@@ -29,6 +29,7 @@ def handler(event, context):
 
     # Create a sample table
     cursor.execute("CREATE TABLE IF NOT EXISTS sample_table (id serial PRIMARY KEY, data varchar);")
+    cursor.execute("GRANT ALL ON sample_table TO mydbuser;")
     connection.commit()
     cursor.close()
     connection.close()

@@ -21,9 +21,23 @@ class EC2InstanceStack(Stack):
         # VPC
         self.vpc = ec2.Vpc(self, "VPC",
             nat_gateways=0,
-            subnet_configuration=[ec2.SubnetConfiguration(name="public",subnet_type=ec2.SubnetType.PUBLIC)]
+            subnet_configuration=[
+                ec2.SubnetConfiguration(
+                    name="public",
+                    subnet_type=ec2.SubnetType.PUBLIC
+                    ),
+                ec2.SubnetConfiguration(
+                    name="private1",
+                    subnet_type=ec2.SubnetType.PRIVATE_ISOLATED
+                ),
+                ec2.SubnetConfiguration(
+                    name="private2",
+                    subnet_type=ec2.SubnetType.PRIVATE_ISOLATED
+                )
+                ]
             )
 
+        """
         # AMI
         amzn_linux = ec2.MachineImage.latest_amazon_linux(
             generation=ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
@@ -42,6 +56,7 @@ class EC2InstanceStack(Stack):
             instance_type=ec2.InstanceType("t3.nano"),
             machine_image=amzn_linux,
             vpc = self.vpc,
+            vpc_subnets = ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVAT_ISOLATED)
             role = role
             )
 
@@ -57,6 +72,7 @@ class EC2InstanceStack(Stack):
             file_path=local_path
             )
         asset.grant_read(instance.role)
+        """
 
 app = App()
 EC2InstanceStack(app, "ec2-instance")

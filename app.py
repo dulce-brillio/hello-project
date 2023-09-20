@@ -26,10 +26,8 @@ ec2_stack = EC2InstanceStack(app, "EC2InstanceStack",
     # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
     )
 
-
 AuroraStack(app, "AuroraStack", description="Aurora Postgresql Cluster",
-  vpc_id    = ec2_stack.vpc.vpc_id,
-  subnet_ids= ec2_stack.vpc.public_subnets,
+  rds_vpc   = ec2_stack.vpc,
 )
 
 app.synth()

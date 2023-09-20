@@ -3,6 +3,9 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_secretsmanager as secretsmanager,
     aws_ec2 as ec2,
+    aws_iam as iam,
+    aws_stepfunctions_tasks as tasks,
+    aws_stepfunctions as sfn,
     Fn, Stack
 )
 
@@ -10,8 +13,8 @@ from constructs import Construct
 
 class AuroraStack(Stack):
     def __init__(self, scope:Construct, id: str,
-                  vpc_id:str,                 ## vpc id
-                  subnet_ids:list[str],       ## list of subnet ids
+                  rds_vpc:ec2.Vpc,                 ## vpc id
+                  #subnet_ids:list[str],       ## list of subnet ids
                   ingress_sources:list=[],
                   **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
@@ -26,11 +29,9 @@ class AuroraStack(Stack):
             )
         )
 
-        
-
         azs = azs = Fn.get_azs()
-        rds_vpc = ec2.Vpc.from_vpc_attributes(self, 'ExistingVPC', availability_zones=azs, vpc_id=vpc_id)
-        rds_vpc_subnets = ec2.SubnetSelection(subnets=subnet_ids)
+        #rds_vpc = ec2.Vpc.from_vpc_attributes(self, 'ExistingVPC', availability_zones=azs, vpc_id=vpc_id)
+        #rds_vpc_subnets = ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC)
 
         # Create rds security group
         dbsg = ec2.SecurityGroup(self, "DatabaseSecurityGroup",
@@ -72,7 +73,7 @@ class AuroraStack(Stack):
             instance_props={
                 "instance_type": ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE4_GRAVITON, ec2.InstanceSize.MEDIUM),
                 "vpc": rds_vpc,
-                "vpc_subnets": rds_vpc_subnets
+                "vpc_subnets": ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED)
             }
         )
 
@@ -80,11 +81,18 @@ class AuroraStack(Stack):
         rds_lambda = _lambda.Function(
             self, "RDSLambda",
             runtime=_lambda.Runtime.PYTHON_3_11,
-            handler="lambda.handler",
-            code=_lambda.Code.from_asset("lambda"),
+            handler="handler.handler",
+            code=_lambda.Code.from_asset("lambda", bundling={
+                "image": _lambda.Runtime.PYTHON_3_11.bundling_image,
+                "command": [
+                    "bash", "-c",
+                    "pip install boto3 -y\nsudo yum update\nsudo amazon-linux-extras install postgresql10"
+                    ],
+                }
+            ),
             vpc=rds_vpc,
             security_groups=[ec2.SecurityGroup.from_security_group_id(self,"SG",dbsg.security_group_id)],
-            vpc_subnets= rds_vpc_subnets,
+            vpc_subnets= ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
             environment={
                 "DB_ENDPOINT": database.cluster_endpoint.hostname,
                 "DB_PORT": str(database.cluster_endpoint.port),
@@ -92,3 +100,41 @@ class AuroraStack(Stack):
                 "DB_PASSWORD_SECRET": rds_secret.secret_name,  
             }
         )
+
+
+        state_machine = sfn.StateMachine(self, "LambdaStateMachine",
+            definition= tasks.LambdaInvoke(self, "Invoke with empty object as payload",
+            lambda_function=rds_lambda,
+            )
+        )
+
+        # AMI
+        amzn_linux = ec2.MachineImage.latest_amazon_linux(
+            generation=ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
+            edition=ec2.AmazonLinuxEdition.STANDARD,
+            virtualization=ec2.AmazonLinuxVirt.HVM,
+            storage=ec2.AmazonLinuxStorage.GENERAL_PURPOSE
+            )
+
+        # Instance Role and SSM Managed Policy
+        role = iam.Role(self, "InstanceSSM", assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"))
+
+        role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSSMManagedInstanceCore"))
+
+        ec2_security_group = ec2.SecurityGroup(self, "Ec2SecurityGroup", vpc=rds_vpc)
+        database.connections.allow_from(
+            ec2_security_group,
+            ec2.Port.tcp(5432),
+            "Allow inbound from EC2"
+        )
+
+        # Instance
+        instance = ec2.Instance(self, "Instance",
+            instance_type=ec2.InstanceType("t3.nano"),
+            machine_image=amzn_linux,
+            vpc = rds_vpc,
+            vpc_subnets = ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+            role = role,
+            security_group = ec2_security_group
+            )
+
