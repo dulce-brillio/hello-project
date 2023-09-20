@@ -77,6 +77,11 @@ class AuroraStack(Stack):
             }
         )
 
+        lambdaLayer = _lambda.LayerVersion(self, 'lambda-layer',
+                  code = _lambda.AssetCode('lambda/layer/'),
+                  compatible_runtimes = [_lambda.Runtime.PYTHON_3_11],
+        ) 
+
         # Create lambda function
         rds_lambda = _lambda.Function(
             self, "RDSLambda",
